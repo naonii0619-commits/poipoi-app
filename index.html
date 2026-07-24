@@ -23,7 +23,8 @@
             padding-bottom: 80px;
         }
         .container { max-width: 500px; margin: 0 auto; }
-        h1 { font-size: 1.2rem; text-align: center; margin-bottom: 12px; }
+        h1 { font-size: 1.2rem; text-align: center; margin-bottom: 4px; }
+        .version-tag { text-align: center; font-size: 0.75rem; color: #64748b; margin-bottom: 12px; }
         
         .card {
             background: var(--card-bg);
@@ -114,11 +115,20 @@
             cursor: pointer;
         }
     </style>
+    <!-- Google公式 Gemini SDK の読み込み -->
+    <script type="importmap">
+      {
+        "imports": {
+          "@google/genai": "https://esm.run/@google/genai"
+        }
+      }
+    </script>
 </head>
 <body>
 
 <div class="container">
-    <h1>🎙️ ポイポイ音声メモ (v1.0.2)</h1>
+    <h1>🎙️ ポイポイ音声メモ</h1>
+    <div class="version-tag">(v2.0.0-SDK)</div>
 
     <div class="card">
         <label style="font-size:0.75rem; color:#64748b;">Gemini API Key</label>
@@ -147,7 +157,9 @@
     </div>
 </div>
 
-<script>
+<script type="module">
+    import { GoogleGenAI } from '@google/genai';
+
     let currentTab = 'shopping';
     let recognition = null;
     let isRecording = false;
@@ -160,9 +172,9 @@
         renderList();
     };
 
-    function saveApiKey() {
+    window.saveApiKey = function() {
         localStorage.setItem('gemini_api_key_memo', document.getElementById('apiKey').value.trim());
-    }
+    };
 
     function initSpeech() {
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -194,14 +206,14 @@
         };
     }
 
-    function toggleSpeech() {
+    window.toggleSpeech = function() {
         if (!recognition) return;
         if (isRecording) {
             stopRecording();
         } else {
             startRecording();
         }
-    }
+    };
 
     function startRecording() {
         isRecording = true;
@@ -221,7 +233,7 @@
         document.getElementById('statusText').innerText = "録音完了。AI解析ボタンを押してください。";
     }
 
-    async function processText() {
+    window.processText = async function() {
         const text = document.getElementById('transcriptText').value.trim();
         const apiKey = document.getElementById('apiKey').value.trim();
 
@@ -244,47 +256,17 @@ JSON形式例:
 - categoryは "shopping" (買う物), "todo" (やる事・タスク), "memo" (覚えておく事・その他) のいずれか
 - 余計な解説文章やマーカー(例: \`\`\`json)は含めず、純粋なJSON配列文字列のみを出力してください`;
 
-        // 有効なモデル名のリスト（順番に試行）
-        const models = [
-            'gemini-1.5-flash-latest',
-            'gemini-2.0-flash',
-            'gemini-1.5-pro-latest'
-        ];
-
-        let successData = null;
-        let lastErrorMessage = '';
-
-        for (const model of models) {
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
-            try {
-                const response = await fetch(url, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        contents: [{ parts: [{ text: prompt }] }]
-                    })
-                });
-
-                if (response.ok) {
-                    successData = await response.json();
-                    break;
-                } else {
-                    const err = await response.json();
-                    lastErrorMessage = err.error ? err.error.message : 'APIエラー';
-                }
-            } catch (e) {
-                lastErrorMessage = e.message;
-            }
-        }
-
-        if (!successData) {
-            alert(`APIエラー: ${lastErrorMessage}`);
-            document.getElementById('statusText').innerText = "エラーが発生しました。";
-            return;
-        }
-
         try {
-            const resText = successData.candidates[0].content.parts[0].text;
+            // GoogleGenAI クライアントの初期化
+            const ai = new GoogleGenAI({ apiKey: apiKey });
+            
+            // 公式推奨モデル gemini-2.5-flash
+            const response = await ai.models.generateContent({
+                model: 'gemini-2.5-flash',
+                contents: prompt,
+            });
+
+            const resText = response.text;
             const cleanJson = resText.replace(/```json/g, '').replace(/```/g, '').trim();
             const items = JSON.parse(cleanJson);
 
@@ -292,11 +274,11 @@ JSON形式例:
             document.getElementById('transcriptText').value = '';
             document.getElementById('statusText').innerText = "自動分類して追加しました！";
         } catch (e) {
-            console.error(e);
-            alert('レスポンスの解析に失敗しました。');
+            console.error("Gemini SDK Error:", e);
+            alert(`AI処理エラー: ${e.message || 'APIキーが無効または通信エラーが発生しました'}`);
             document.getElementById('statusText').innerText = "エラーが発生しました。";
         }
-    }
+    };
 
     function saveItems(newItems) {
         let currentData = JSON.parse(localStorage.getItem('poipoi_items') || '[]');
@@ -312,19 +294,19 @@ JSON形式例:
         renderList();
     }
 
-    function deleteItem(id) {
+    window.deleteItem = function(id) {
         let currentData = JSON.parse(localStorage.getItem('poipoi_items') || '[]');
         currentData = currentData.filter(item => item.id !== id);
         localStorage.setItem('poipoi_items', JSON.stringify(currentData));
         renderList();
-    }
+    };
 
-    function switchTab(tab) {
+    window.switchTab = function(tab) {
         currentTab = tab;
         document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
         event.target.classList.add('active');
         renderList();
-    }
+    };
 
     function renderList() {
         const allItems = JSON.parse(localStorage.getItem('poipoi_items') || '[]');
