@@ -115,20 +115,12 @@
             cursor: pointer;
         }
     </style>
-    <!-- Google公式 Gemini SDK の読み込み -->
-    <script type="importmap">
-      {
-        "imports": {
-          "@google/genai": "https://esm.run/@google/genai"
-        }
-      }
-    </script>
 </head>
 <body>
 
 <div class="container">
     <h1>🎙️ ポイポイ音声メモ</h1>
-    <div class="version-tag">(v2.0.1-SDK)</div>
+    <div class="version-tag">(v3.0.0-FINAL)</div>
 
     <div class="card">
         <label style="font-size:0.75rem; color:#64748b;">Gemini API Key</label>
@@ -157,9 +149,7 @@
     </div>
 </div>
 
-<script type="module">
-    import { GoogleGenAI } from '@google/genai';
-
+<script>
     let currentTab = 'shopping';
     let recognition = null;
     let isRecording = false;
@@ -172,9 +162,9 @@
         renderList();
     };
 
-    window.saveApiKey = function() {
+    function saveApiKey() {
         localStorage.setItem('gemini_api_key_memo', document.getElementById('apiKey').value.trim());
-    };
+    }
 
     function initSpeech() {
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -206,14 +196,14 @@
         };
     }
 
-    window.toggleSpeech = function() {
+    function toggleSpeech() {
         if (!recognition) return;
         if (isRecording) {
             stopRecording();
         } else {
             startRecording();
         }
-    };
+    }
 
     function startRecording() {
         isRecording = true;
@@ -233,7 +223,7 @@
         document.getElementById('statusText').innerText = "録音完了。AI解析ボタンを押してください。";
     }
 
-    window.processText = async function() {
+    async function processText() {
         const text = document.getElementById('transcriptText').value.trim();
         const apiKey = document.getElementById('apiKey').value.trim();
 
@@ -256,16 +246,28 @@ JSON形式例:
 - categoryは "shopping" (買う物), "todo" (やる事・タスク), "memo" (覚えておく事・その他) のいずれか
 - 余計な解説文章やマーカー(例: \`\`\`json)は含めず、純粋なJSON配列文字列のみを出力してください`;
 
+        // 最新標準 gemini-2.5-flash エンドポイント
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+
         try {
-            const ai = new GoogleGenAI({ apiKey: apiKey });
-            
-            // 安定版の gemini-1.5-flash を指定
-            const response = await ai.models.generateContent({
-                model: 'gemini-1.5-flash',
-                contents: prompt,
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    contents: [{ parts: [{ text: prompt }] }]
+                })
             });
 
-            const resText = response.text;
+            if (!response.ok) {
+                const errorData = await response.json();
+                console.error("API Error Response:", errorData);
+                alert(`APIエラー: ${errorData.error ? errorData.error.message : 'APIキーまたは通信エラーです'}`);
+                document.getElementById('statusText').innerText = "エラーが発生しました。";
+                return;
+            }
+
+            const data = await response.json();
+            const resText = data.candidates[0].content.parts[0].text;
             const cleanJson = resText.replace(/```json/g, '').replace(/```/g, '').trim();
             const items = JSON.parse(cleanJson);
 
@@ -273,11 +275,11 @@ JSON形式例:
             document.getElementById('transcriptText').value = '';
             document.getElementById('statusText').innerText = "自動分類して追加しました！";
         } catch (e) {
-            console.error("Gemini SDK Error:", e);
-            alert(`AI処理エラー: ${e.message || 'APIキーが無効または通信エラーが発生しました'}`);
+            console.error(e);
+            alert('AIの処理に失敗しました。');
             document.getElementById('statusText').innerText = "エラーが発生しました。";
         }
-    };
+    }
 
     function saveItems(newItems) {
         let currentData = JSON.parse(localStorage.getItem('poipoi_items') || '[]');
@@ -293,19 +295,19 @@ JSON形式例:
         renderList();
     }
 
-    window.deleteItem = function(id) {
+    function deleteItem(id) {
         let currentData = JSON.parse(localStorage.getItem('poipoi_items') || '[]');
         currentData = currentData.filter(item => item.id !== id);
         localStorage.setItem('poipoi_items', JSON.stringify(currentData));
         renderList();
-    };
+    }
 
-    window.switchTab = function(tab) {
+    function switchTab(tab) {
         currentTab = tab;
         document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
         event.target.classList.add('active');
         renderList();
-    };
+    }
 
     function renderList() {
         const allItems = JSON.parse(localStorage.getItem('poipoi_items') || '[]');
