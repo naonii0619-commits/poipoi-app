@@ -128,7 +128,7 @@
 
 <div class="container">
     <h1>🎙️ ポイポイ音声メモ</h1>
-    <div class="version-tag">(v2.0.0-SDK)</div>
+    <div class="version-tag">(v2.0.1-SDK)</div>
 
     <div class="card">
         <label style="font-size:0.75rem; color:#64748b;">Gemini API Key</label>
@@ -257,12 +257,11 @@ JSON形式例:
 - 余計な解説文章やマーカー(例: \`\`\`json)は含めず、純粋なJSON配列文字列のみを出力してください`;
 
         try {
-            // GoogleGenAI クライアントの初期化
             const ai = new GoogleGenAI({ apiKey: apiKey });
             
-            // 公式推奨モデル gemini-2.5-flash
+            // 安定版の gemini-1.5-flash を指定
             const response = await ai.models.generateContent({
-                model: 'gemini-2.5-flash',
+                model: 'gemini-1.5-flash',
                 contents: prompt,
             });
 
