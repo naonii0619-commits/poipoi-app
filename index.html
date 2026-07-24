@@ -24,7 +24,7 @@
         }
         .container { max-width: 500px; margin: 0 auto; }
         h1 { font-size: 1.2rem; text-align: center; margin-bottom: 4px; }
-        .version-tag { text-align: center; font-size: 0.75rem; color: #64748b; margin-bottom: 12px; }
+        .version-tag { text-align: center; font-size: 0.75rem; color: #2563eb; font-weight: bold; margin-bottom: 12px; }
         
         .card {
             background: var(--card-bg);
@@ -120,7 +120,7 @@
 
 <div class="container">
     <h1>🎙️ ポイポイ音声メモ</h1>
-    <div class="version-tag">(v3.0.0-FINAL)</div>
+    <div class="version-tag">(v4.0.0-PROD)</div>
 
     <div class="card">
         <label style="font-size:0.75rem; color:#64748b;">Gemini API Key</label>
@@ -246,8 +246,8 @@ JSON形式例:
 - categoryは "shopping" (買う物), "todo" (やる事・タスク), "memo" (覚えておく事・その他) のいずれか
 - 余計な解説文章やマーカー(例: \`\`\`json)は含めず、純粋なJSON配列文字列のみを出力してください`;
 
-        // 最新標準 gemini-2.5-flash エンドポイント
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+        // 新規ユーザー向け最新モデル gemini-1.5-flash-latest を使用
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`;
 
         try {
             const response = await fetch(url, {
@@ -261,7 +261,7 @@ JSON形式例:
             if (!response.ok) {
                 const errorData = await response.json();
                 console.error("API Error Response:", errorData);
-                alert(`APIエラー: ${errorData.error ? errorData.error.message : 'APIキーまたは通信エラーです'}`);
+                alert(`APIエラー: ${errorData.error ? errorData.error.message : 'エラーが発生しました'}`);
                 document.getElementById('statusText').innerText = "エラーが発生しました。";
                 return;
             }
