@@ -118,7 +118,7 @@
 <body>
 
 <div class="container">
-    <h1>🎙️ ポイポイ音声メモ</h1>
+    <h1>🎙️ ポイポイ音声メモ (v1.0.1)</h1>
 
     <div class="card">
         <label style="font-size:0.75rem; color:#64748b;">Gemini API Key</label>
@@ -244,7 +244,7 @@ JSON形式例:
 - categoryは "shopping" (買う物), "todo" (やる事・タスク), "memo" (覚えておく事・その他) のいずれか
 - 余計な解説文章やマーカー(例: \`\`\`json)は含めず、純粋なJSON配列文字列のみを出力してください`;
 
-        // 安定版 API エンドポイント (v1)
+        // 完全安定版 v1 / gemini-1.5-flash エンドポイント
         const url = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
 
         try {
@@ -259,7 +259,7 @@ JSON形式例:
             if (!response.ok) {
                 const errorData = await response.json();
                 console.error("API Error Response:", errorData);
-                alert(`APIエラー (${response.status}): ${errorData.error ? errorData.error.message : 'APIキーまたは設定が無効です'}`);
+                alert(`APIエラー (${response.status}): ${errorData.error ? errorData.error.message : 'APIキーが無効です'}`);
                 document.getElementById('statusText').innerText = "エラーが発生しました。";
                 return;
             }
@@ -274,7 +274,7 @@ JSON形式例:
             document.getElementById('statusText').innerText = "自動分類して追加しました！";
         } catch (e) {
             console.error(e);
-            alert('AIの処理に失敗しました。キーの入力状態などを確認してください。');
+            alert('AIの処理に失敗しました。');
             document.getElementById('statusText').innerText = "エラーが発生しました。";
         }
     }
